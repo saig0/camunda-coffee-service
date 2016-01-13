@@ -13,8 +13,8 @@
 package org.camunda.bpm.example.coffee;
 
 import java.util.List;
+import java.util.logging.Logger;
 
-import org.apache.commons.mail.Email;
 import org.camunda.bpm.application.PostDeploy;
 import org.camunda.bpm.application.PreUndeploy;
 import org.camunda.bpm.application.ProcessApplication;
@@ -22,17 +22,17 @@ import org.camunda.bpm.application.impl.ServletProcessApplication;
 import org.camunda.bpm.engine.ProcessEngine;
 import org.camunda.bpm.engine.TaskService;
 import org.camunda.bpm.engine.task.Task;
-import org.camunda.bpm.example.coffee.mail.MailProvider;
 import org.camunda.bpm.example.coffee.raspberry.DefaultRaspberryPiController;
 import org.camunda.bpm.example.coffee.raspberry.RaspberryPiController.RaspberryPiListener;
 import org.camunda.bpm.example.coffee.raspberry.RaspberryPiControllerProvider;
-import org.camunda.bpm.example.coffee.service.SendMailTask;
 
 /**
  * Process Application exposing this application's resources the process engine.
  */
 @ProcessApplication
 public class CoffeeProcessApplication extends ServletProcessApplication {
+
+	private final static Logger LOGGER = Logger.getLogger(CoffeeProcessApplication.class.getName());
 
 	private DefaultRaspberryPiController raspberryPiController;
 
@@ -46,14 +46,6 @@ public class CoffeeProcessApplication extends ServletProcessApplication {
 		createUsers(processEngine);
 
 		initRaspberryPiController(processEngine);
-
-		// TODO replace with real mail provider
-		SendMailTask.setMailProvider(new MailProvider() {
-
-			public void send(Email email) {
-				System.out.println("send mail to: " + email.getToAddresses());
-			}
-		});
 	}
 
 	private void createUsers(ProcessEngine processEngine) {
@@ -61,11 +53,15 @@ public class CoffeeProcessApplication extends ServletProcessApplication {
 	}
 
 	private void initRaspberryPiController(final ProcessEngine processEngine) {
+		LOGGER.info("init raspberry pi controller");
+
 		raspberryPiController = new DefaultRaspberryPiController();
 
 		raspberryPiController.init(new RaspberryPiListener() {
 
 			public void onButtonClicked() {
+				LOGGER.info("button clicked on raspberry pi - complete tasks");
+
 				TaskService taskService = processEngine.getTaskService();
 
 				List<Task> tasks = taskService.createTaskQuery().taskCandidateGroup("coffeeMaker").list();
@@ -77,6 +73,8 @@ public class CoffeeProcessApplication extends ServletProcessApplication {
 		});
 
 		RaspberryPiControllerProvider.setController(raspberryPiController);
+
+		LOGGER.info("raspberry pi controller initialized");
 	}
 
 	@PreUndeploy
