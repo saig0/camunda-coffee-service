@@ -8,8 +8,8 @@
     <bpmn:sequenceFlow id="SequenceFlow_1lf21ve" sourceRef="StartEvent_1" targetRef="UserTask_0af66wa" />
     <bpmn:userTask id="UserTask_0af66wa" name="make coffee" camunda:candidateGroups="coffeeMaker">
       <bpmn:extensionElements>
-        <camunda:taskListener event="create" class="org.camunda.bpm.example.coffee.service.RaspberryPiLedOn" />
-        <camunda:taskListener event="complete" class="org.camunda.bpm.example.coffee.service.RaspberryPiLedOff" />
+        <camunda:taskListener event="create" class="org.camunda.bpm.example.coffee.raspberry.RaspberryPiLedOn" />
+        <camunda:taskListener event="complete" class="org.camunda.bpm.example.coffee.raspberry.RaspberryPiLedOff" />
       </bpmn:extensionElements>
       <bpmn:incoming>SequenceFlow_1lf21ve</bpmn:incoming>
       <bpmn:outgoing>SequenceFlow_01geqmg</bpmn:outgoing>

@@ -7,26 +7,45 @@ import org.camunda.bpm.engine.test.Deployment;
 import org.camunda.bpm.engine.test.ProcessEngineTestCase;
 import org.camunda.bpm.engine.variable.VariableMap;
 import org.camunda.bpm.engine.variable.Variables;
+import org.camunda.bpm.example.coffee.raspberry.RaspberryPiControllerProvider;
+import org.camunda.bpm.example.coffee.service.SendMailTask;
 
 public class CoffeeTestCase extends ProcessEngineTestCase {
 
-  @Deployment(resources= {"coffeeProcess.bpmn"})
-  public void testHappyPath() {
-    VariableMap variables = Variables.createVariables()
-      .putValue("email", "philipp.ossler@camunda.com");
+	private MockMailProvider mockMailProvider = new MockMailProvider();
+	private MockRaspberryPiController mockRaspberryPiController = new MockRaspberryPiController();
 
-    ProcessInstance pi = runtimeService.startProcessInstanceByKey("coffeeProcess", variables);
+	@Override
+	protected void setUp() throws Exception {
+		super.setUp();
 
-    Task task = taskService.createTaskQuery().taskCandidateGroup("coffeeMaker").singleResult();
-    assertEquals("make coffee", task.getName());
-    taskService.complete(task.getId());
+		SendMailTask.setMailProvider(mockMailProvider);
+		RaspberryPiControllerProvider.setController(mockRaspberryPiController);
+	}
 
-    Job job = managementService.createJobQuery().timers().active().singleResult();
-    assertNotNull(job);
-    managementService.executeJob(job.getId());
+	@Deployment(resources = { "coffeeProcess.bpmn" })
+	public void testHappyPath() {
+		VariableMap variables = Variables.createVariables().putValue("email", "philipp.ossler@camunda.com");
 
-    assertProcessEnded(pi.getId());
-  }
+		ProcessInstance pi = runtimeService.startProcessInstanceByKey("coffeeProcess", variables);
 
+		assertTrue(mockRaspberryPiController.isLedTurnedOn());
+
+		Task task = taskService.createTaskQuery().taskCandidateGroup("coffeeMaker").singleResult();
+
+		assertEquals("make coffee", task.getName());
+		taskService.complete(task.getId());
+
+		assertFalse(mockRaspberryPiController.isLedTurnedOn());
+
+		Job job = managementService.createJobQuery().timers().active().singleResult();
+
+		assertNotNull(job);
+		managementService.executeJob(job.getId());
+
+		assertEquals(1, mockMailProvider.getSentMails().size());
+
+		assertProcessEnded(pi.getId());
+	}
 
 }

@@ -12,10 +12,21 @@
  */
 package org.camunda.bpm.example.coffee;
 
+import java.util.List;
+
+import org.apache.commons.mail.Email;
 import org.camunda.bpm.application.PostDeploy;
+import org.camunda.bpm.application.PreUndeploy;
 import org.camunda.bpm.application.ProcessApplication;
 import org.camunda.bpm.application.impl.ServletProcessApplication;
 import org.camunda.bpm.engine.ProcessEngine;
+import org.camunda.bpm.engine.TaskService;
+import org.camunda.bpm.engine.task.Task;
+import org.camunda.bpm.example.coffee.mail.MailProvider;
+import org.camunda.bpm.example.coffee.raspberry.DefaultRaspberryPiController;
+import org.camunda.bpm.example.coffee.raspberry.RaspberryPiController.RaspberryPiListener;
+import org.camunda.bpm.example.coffee.raspberry.RaspberryPiControllerProvider;
+import org.camunda.bpm.example.coffee.service.SendMailTask;
 
 /**
  * Process Application exposing this application's resources the process engine.
@@ -23,25 +34,53 @@ import org.camunda.bpm.engine.ProcessEngine;
 @ProcessApplication
 public class CoffeeProcessApplication extends ServletProcessApplication {
 
-  /**
-   * In a @PostDeploy Hook you can interact with the process engine and access
-   * the processes the application has deployed.
-   */
-  @PostDeploy
-  public void startFirstProcess(ProcessEngine processEngine) {
+	private DefaultRaspberryPiController raspberryPiController;
 
-    createUsers(processEngine);
-    registerPiControls();
-  }
+	/**
+	 * In a @PostDeploy Hook you can interact with the process engine and access
+	 * the processes the application has deployed.
+	 */
+	@PostDeploy
+	public void startFirstProcess(ProcessEngine processEngine) {
 
-  private void registerPiControls() {
-    // TODO Auto-generated method stub
+		createUsers(processEngine);
 
-  }
+		initRaspberryPiController(processEngine);
 
-  private void createUsers(ProcessEngine processEngine) {
+		// TODO replace with real mail provider
+		SendMailTask.setMailProvider(new MailProvider() {
 
-    // create demo users
-    new DemoDataGenerator().createUsers(processEngine);
-  }
+			public void send(Email email) {
+				System.out.println("send mail to: " + email.getToAddresses());
+			}
+		});
+	}
+
+	private void createUsers(ProcessEngine processEngine) {
+		new DemoDataGenerator().createUsers(processEngine);
+	}
+
+	private void initRaspberryPiController(final ProcessEngine processEngine) {
+		raspberryPiController = new DefaultRaspberryPiController();
+
+		raspberryPiController.init(new RaspberryPiListener() {
+
+			public void onButtonClicked() {
+				TaskService taskService = processEngine.getTaskService();
+
+				List<Task> tasks = taskService.createTaskQuery().taskCandidateGroup("coffeeMaker").list();
+
+				for (Task task : tasks) {
+					taskService.complete(task.getId());
+				}
+			}
+		});
+
+		RaspberryPiControllerProvider.setController(raspberryPiController);
+	}
+
+	@PreUndeploy
+	public void cleanup(ProcessEngine processEngine) {
+		raspberryPiController.tearDown();
+	}
 }

@@ -12,52 +12,80 @@
  */
 package org.camunda.bpm.example.coffee.service;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 
 import org.apache.commons.mail.Email;
+import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.SimpleEmail;
 import org.camunda.bpm.engine.delegate.DelegateExecution;
 import org.camunda.bpm.engine.delegate.JavaDelegate;
+import org.camunda.bpm.example.coffee.mail.DefaultMailProvider;
+import org.camunda.bpm.example.coffee.mail.MailProvider;
 
 public class SendMailTask implements JavaDelegate {
 
-  private Properties mailProperties = new Properties();
+	private Properties mailProperties;
+	private static MailProvider mailProvider;
 
-  public void execute(DelegateExecution execution) throws Exception {
+	public void execute(DelegateExecution execution) throws Exception {
 
-    mailProperties.load(getClass().getResourceAsStream("/mail.properties"));
+		loadProperties();
 
-    String to = (String) execution.getVariable("email");
+		String to = (String) execution.getVariable("email");
 
-    if (to == null) {
-      // do nothing
-    } else {
-      String host = mailProperties.getProperty("host");
-      Integer port = Integer.valueOf(mailProperties.getProperty("port"));
-      String user = mailProperties.getProperty("user");
-      String password = mailProperties.getProperty("password");
+		if (to == null) {
+			// do nothing
+		} else {
+			sendMail(to);
+		}
 
-      String from = mailProperties.getProperty("from");
+	}
 
-      Email email = new SimpleEmail();
-      email.setHostName(host);
-      email.setTLS(true);
-      email.setSmtpPort(port);
-      email.setAuthentication(user, password);
+	private void sendMail(String to) throws EmailException {
+		String host = mailProperties.getProperty("host");
+		Integer port = Integer.valueOf(mailProperties.getProperty("port"));
+		String user = mailProperties.getProperty("user");
+		String password = mailProperties.getProperty("password");
 
-      try {
-        email.setFrom(from);
-        email.setSubject("Your Coffee");
-        email.setMsg("...is ready to drink.");
-        email.addTo(to);
+		String from = mailProperties.getProperty("from");
 
-        email.send();
+		Email email = new SimpleEmail();
+		email.setHostName(host);
+		email.setTLS(true);
+		email.setSmtpPort(port);
+		email.setAuthentication(user, password);
 
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    }
+		email.setFrom(from);
+		email.setSubject("Your Coffee");
+		email.setMsg("...is ready to drink.");
+		email.addTo(to);
 
-  }
+		getMailProvider().send(email);
+	}
 
+	private MailProvider getMailProvider() {
+		if (mailProvider == null) {
+			mailProvider = new DefaultMailProvider();
+		}
+		return mailProvider;
+	}
+
+	private void loadProperties() throws IOException {
+		if (mailProperties == null) {
+			mailProperties = new Properties();
+			InputStream inputStream = getClass().getResourceAsStream("/mail.properties");
+
+			if (inputStream == null) {
+				throw new RuntimeException("mail properties not found!");
+			}
+
+			mailProperties.load(inputStream);
+		}
+	};
+
+	public static void setMailProvider(MailProvider mailProvider) {
+		SendMailTask.mailProvider = mailProvider;
+	}
 }
