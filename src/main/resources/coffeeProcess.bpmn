@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="coffeeProcess" name="CoffeeProcess" isExecutable="true">
+    <bpmn:documentation>Request a coffee.</bpmn:documentation>
+    <bpmn:startEvent id="StartEvent_1">
+      <bpmn:outgoing>SequenceFlow_1lf21ve</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="SequenceFlow_1lf21ve" sourceRef="StartEvent_1" targetRef="UserTask_0af66wa" />
+    <bpmn:userTask id="UserTask_0af66wa" name="make coffee" camunda:candidateGroups="coffeeMaker">
+      <bpmn:extensionElements>
+        <camunda:taskListener event="create" class="org.camunda.bpm.example.coffee.service.RaspberryPiLedOn" />
+        <camunda:taskListener event="complete" class="org.camunda.bpm.example.coffee.service.RaspberryPiLedOff" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>SequenceFlow_1lf21ve</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_01geqmg</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="SequenceFlow_01geqmg" sourceRef="UserTask_0af66wa" targetRef="IntermediateCatchEvent_1nfs8jh" />
+    <bpmn:intermediateCatchEvent id="IntermediateCatchEvent_1nfs8jh" name="wait till coffee is ready">
+      <bpmn:incoming>SequenceFlow_01geqmg</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_0pfw31h</bpmn:outgoing>
+      <bpmn:timerEventDefinition>
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">PT5M</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:sequenceFlow id="SequenceFlow_0pfw31h" sourceRef="IntermediateCatchEvent_1nfs8jh" targetRef="ServiceTask_0544ga0" />
+    <bpmn:endEvent id="EndEvent_08gcwak">
+      <bpmn:incoming>SequenceFlow_1rpbqrv</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="SequenceFlow_1rpbqrv" sourceRef="ServiceTask_0544ga0" targetRef="EndEvent_08gcwak" />
+    <bpmn:serviceTask id="ServiceTask_0544ga0" name="inform the user who requested the coffee" camunda:class="org.camunda.bpm.example.coffee.service.SendMailTask">
+      <bpmn:incoming>SequenceFlow_0pfw31h</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_1rpbqrv</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:textAnnotation id="TextAnnotation_1c0siaa">    <bpmn:text>switch on the LED till the task is open </bpmn:text>
+</bpmn:textAnnotation>
+    <bpmn:association id="Association_122fkg1" sourceRef="UserTask_0af66wa" targetRef="TextAnnotation_1c0siaa" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="coffeeProcess">
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
+        <dc:Bounds x="173" y="102" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_1lf21ve_di" bpmnElement="SequenceFlow_1lf21ve">
+        <di:waypoint xsi:type="dc:Point" x="209" y="120" />
+        <di:waypoint xsi:type="dc:Point" x="283" y="120" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="201" y="110" width="90" height="20" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="UserTask_0af66wa_di" bpmnElement="UserTask_0af66wa">
+        <dc:Bounds x="283" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_01geqmg_di" bpmnElement="SequenceFlow_01geqmg">
+        <di:waypoint xsi:type="dc:Point" x="383" y="120" />
+        <di:waypoint xsi:type="dc:Point" x="454" y="120" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="373.5" y="110" width="90" height="20" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="IntermediateCatchEvent_1nfs8jh_di" bpmnElement="IntermediateCatchEvent_1nfs8jh">
+        <dc:Bounds x="454" y="102" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="427" y="138" width="90" height="20" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_0pfw31h_di" bpmnElement="SequenceFlow_0pfw31h">
+        <di:waypoint xsi:type="dc:Point" x="490" y="120" />
+        <di:waypoint xsi:type="dc:Point" x="596" y="120" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="559" y="110" width="90" height="20" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="EndEvent_08gcwak_di" bpmnElement="EndEvent_08gcwak">
+        <dc:Bounds x="774" y="102" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="747" y="138" width="90" height="20" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_1rpbqrv_di" bpmnElement="SequenceFlow_1rpbqrv">
+        <di:waypoint xsi:type="dc:Point" x="696" y="120" />
+        <di:waypoint xsi:type="dc:Point" x="774" y="120" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="692.5" y="110" width="90" height="20" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="TextAnnotation_1c0siaa_di" bpmnElement="TextAnnotation_1c0siaa">
+        <dc:Bounds x="254" y="202" width="158" height="69" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Association_122fkg1_di" bpmnElement="Association_122fkg1">
+        <di:waypoint xsi:type="dc:Point" x="333" y="160" />
+        <di:waypoint xsi:type="dc:Point" x="333" y="202" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="ServiceTask_0544ga0_di" bpmnElement="ServiceTask_0544ga0">
+        <dc:Bounds x="596" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
